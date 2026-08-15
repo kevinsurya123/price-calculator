@@ -6,7 +6,7 @@ import {
 } from "./data/pricingData";
 
 // ============================================================
-// CALCULATORS
+// CALCULATOR LIST
 // ============================================================
 
 const calculators = Object.entries(pricingData).map(
@@ -20,11 +20,11 @@ const calculators = Object.entries(pricingData).map(
 // PAYMENT LINK
 // ============================================================
 
-// GANTI URL INI dengan link payment kamu
-const PAYMENT_URL = "http://algonova.id.tilda.ws/xendit_bnpl?lead_uuid=a270494b-97b1-42d4-ae7d-63fd2a801209&fb_pixel_id=1152940395642591";
+const PAYMENT_URL =
+  "http://algonova.id.tilda.ws/xendit_bnpl?lead_uuid=a270494b-97b1-42d4-ae7d-63fd2a801209&fb_pixel_id=1152940395642591";
 
 // ============================================================
-// HELPER
+// FORMAT RUPIAH
 // ============================================================
 
 function formatRupiah(value) {
@@ -32,7 +32,19 @@ function formatRupiah(value) {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(value || 0);
+}
+
+// ============================================================
+// GET FIRST CLASS
+// ============================================================
+
+function getFirstClass(calculator) {
+  if (!calculator?.classes) {
+    return "";
+  }
+
+  return Object.keys(calculator.classes)[0] || "";
 }
 
 // ============================================================
@@ -43,10 +55,13 @@ function createItem() {
   const calculator = calculators[0];
 
   return {
-    calculatorId: calculator.id,
-    className: Object.keys(calculator.classes)[0],
-    priceType: "normal",
-    packageName: "10L",
+    calculatorId: calculator?.id || "",
+    className: getFirstClass(calculator),
+    priceType: priceTypes?.[0]?.id || "normal",
+    packageName: packages?.[0] || "10L",
+
+    // Item baru otomatis mendapat bundling 10%
+    bundling: true,
   };
 }
 
@@ -55,7 +70,18 @@ function createItem() {
 // ============================================================
 
 function App() {
-  const [items, setItems] = useState([createItem()]);
+  // ==========================================================
+  // ITEMS
+  // ==========================================================
+
+  const [items, setItems] = useState([
+    {
+      ...createItem(),
+
+      // Item pertama tidak mendapatkan bundling
+      bundling: false,
+    },
+  ]);
 
   // ==========================================================
   // UPDATE ITEM
@@ -81,7 +107,11 @@ function App() {
   const changeCalculator = (index, calculatorId) => {
     const calculator = pricingData[calculatorId];
 
-    const firstClass = Object.keys(calculator.classes)[0];
+    if (!calculator) {
+      return;
+    }
+
+    const firstClass = getFirstClass(calculator);
 
     setItems((currentItems) => {
       const newItems = [...currentItems];
@@ -90,8 +120,8 @@ function App() {
         ...newItems[index],
         calculatorId,
         className: firstClass,
-        priceType: "normal",
-        packageName: "10L",
+        priceType: priceTypes?.[0]?.id || "normal",
+        packageName: packages?.[0] || "10L",
       };
 
       return newItems;
@@ -114,7 +144,9 @@ function App() {
   // ==========================================================
 
   const removeItem = (index) => {
-    if (index === 0) return;
+    if (index === 0) {
+      return;
+    }
 
     setItems((currentItems) =>
       currentItems.filter(
@@ -128,11 +160,16 @@ function App() {
   // ==========================================================
 
   const resetCalculator = () => {
-    setItems([createItem()]);
+    setItems([
+      {
+        ...createItem(),
+        bundling: false,
+      },
+    ]);
   };
 
   // ==========================================================
-  // CALCULATE ITEM PRICE
+  // GET ITEM PRICE
   // ==========================================================
 
   const getItemPrice = (item, index) => {
@@ -143,7 +180,10 @@ function App() {
         item.priceType
       ]?.[item.packageName] ?? 0;
 
+    // --------------------------------------------------------
     // ITEM PERTAMA
+    // --------------------------------------------------------
+
     if (index === 0) {
       return {
         basePrice: price,
@@ -152,14 +192,29 @@ function App() {
       };
     }
 
-    // ITEM KEDUA DAN SETERUSNYA
-    const discount = price * 0.1;
-    const finalPrice = price - discount;
+    // --------------------------------------------------------
+    // ITEM TAMBAHAN + BUNDLING ON
+    // --------------------------------------------------------
+
+    if (item.bundling === true) {
+      const discount = price * 0.1;
+      const finalPrice = price - discount;
+
+      return {
+        basePrice: price,
+        discount,
+        finalPrice,
+      };
+    }
+
+    // --------------------------------------------------------
+    // ITEM TAMBAHAN + BUNDLING OFF
+    // --------------------------------------------------------
 
     return {
       basePrice: price,
-      discount,
-      finalPrice,
+      discount: 0,
+      finalPrice: price,
     };
   };
 
@@ -190,15 +245,24 @@ function App() {
   );
 
   // ==========================================================
+  // BUNDLING COUNT
+  // ==========================================================
+
+  const bundlingCount = items.filter(
+    (item, index) =>
+      index > 0 && item.bundling === true
+  ).length;
+
+  // ==========================================================
   // RENDER
   // ==========================================================
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
 
-      {/* ====================================================
+      {/* ======================================================
           BACKGROUND
-      ==================================================== */}
+      ====================================================== */}
 
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
 
@@ -211,17 +275,15 @@ function App() {
 
       <div className="relative">
 
-
-        {/* ==================================================
+        {/* ====================================================
             HEADER
-        ================================================== */}
+        ==================================================== */}
 
         <header className="border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
 
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-8">
 
-
-            {/* LOGO */}
+            {/* LEFT */}
 
             <div className="flex items-center gap-4">
 
@@ -244,7 +306,7 @@ function App() {
             </div>
 
 
-            {/* RIGHT HEADER */}
+            {/* RIGHT */}
 
             <div className="flex items-center gap-3">
 
@@ -261,10 +323,10 @@ function App() {
 
               <div className="group relative ml-1">
 
-                <div className="h-16 w-16 overflow-hidden rounded-2xl border border-white/20 bg-slate-800 shadow-lg shadow-black/20 transition-all duration-300 group-hover:scale-110 group-hover:border-indigo-400">
+                <div className="h-16 w-16 overflow-hidden rounded-2xl border border-white/20 bg-slate-800 shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:border-indigo-400">
 
                   <img
-                    src="/team-photo.jpg"
+                    src="/team-photo.png"
                     alt="Our Team"
                     className="h-full w-full object-cover"
                   />
@@ -272,12 +334,8 @@ function App() {
                 </div>
 
 
-                {/* TOOLTIP */}
-
                 <div className="pointer-events-none absolute right-0 top-[4.5rem] z-50 whitespace-nowrap rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-300 opacity-0 shadow-xl transition-opacity duration-200 group-hover:opacity-100">
-
                   Our Team
-
                 </div>
 
               </div>
@@ -289,16 +347,15 @@ function App() {
         </header>
 
 
-        {/* ==================================================
+        {/* ====================================================
             MAIN
-        ================================================== */}
+        ==================================================== */}
 
         <main className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
 
-
-          {/* =================================================
+          {/* ==================================================
               HERO
-          ================================================= */}
+          ================================================== */}
 
           <section className="mb-10">
 
@@ -306,17 +363,17 @@ function App() {
 
               <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
 
-              Sales Pricing Calculator
+              Only For Team 3 🙈🙈🙈
 
             </div>
 
 
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
 
-              Calculate your
+              Calculate your{" "}
 
               <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-                {" "}package price
+                package price
               </span>
 
             </h2>
@@ -324,28 +381,30 @@ function App() {
 
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
 
-              Add multiple courses to create a bundled package.
-              The first item uses the selected price, while
-              additional items automatically receive 10% bundling discount.
+              Add multiple courses and individually control
+              the 10% bundling discount for each additional
+              item.
 
             </p>
 
           </section>
 
 
-          {/* =================================================
+          {/* ==================================================
               CONTENT
-          ================================================= */}
+          ================================================== */}
 
           <div className="grid gap-6 lg:grid-cols-3">
 
-
             {/* =================================================
-                ITEMS
+                LEFT SIDE
             ================================================= */}
 
             <div className="space-y-5 lg:col-span-2">
 
+              {/* =================================================
+                  ITEMS
+              ================================================= */}
 
               {items.map((item, index) => {
 
@@ -353,7 +412,9 @@ function App() {
                   pricingData[item.calculatorId];
 
                 const availableClasses =
-                  Object.keys(calculator.classes);
+                  Object.keys(
+                    calculator?.classes || {}
+                  );
 
                 const result =
                   getItemPrice(item, index);
@@ -363,36 +424,46 @@ function App() {
 
                   <div
                     key={index}
-                    className={`overflow-hidden rounded-2xl border ${
+                    className={`overflow-hidden rounded-2xl border transition-all duration-200 ${
                       index === 0
                         ? "border-indigo-500/30 bg-indigo-500/[0.04]"
-                        : "border-amber-500/20 bg-amber-500/[0.03]"
+                        : item.bundling
+                        ? "border-amber-500/30 bg-amber-500/[0.04]"
+                        : "border-white/10 bg-white/[0.02]"
                     }`}
                   >
 
+                    {/* ========================================
+                        ITEM HEADER
+                    ======================================== */}
 
-                    {/* ITEM HEADER */}
+                    <div className="flex flex-col gap-4 border-b border-white/10 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
 
-                    <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+                      {/* ITEM INFO */}
 
                       <div className="flex items-center gap-3">
 
                         <div
-                          className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold ${
+                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
                             index === 0
                               ? "bg-indigo-500/20 text-indigo-300"
-                              : "bg-amber-500/20 text-amber-300"
+                              : item.bundling
+                              ? "bg-amber-500/20 text-amber-300"
+                              : "bg-slate-500/10 text-slate-400"
                           }`}
                         >
 
-                          {index + 1}
+                          {String(index + 1).padStart(
+                            2,
+                            "0"
+                          )}
 
                         </div>
 
 
                         <div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
 
                             <h3 className="font-semibold">
                               Item {index + 1}
@@ -405,10 +476,16 @@ function App() {
                                 Primary
                               </span>
 
-                            ) : (
+                            ) : item.bundling ? (
 
                               <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
                                 Bundling -10%
+                              </span>
+
+                            ) : (
+
+                              <span className="rounded-full bg-slate-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                                Standard Price
                               </span>
 
                             )}
@@ -419,8 +496,10 @@ function App() {
                           <p className="mt-1 text-xs text-slate-500">
 
                             {index === 0
-                              ? "First item uses standard selected price"
-                              : "Additional item receives 10% bundling discount"}
+                              ? "Primary item — standard price"
+                              : item.bundling
+                              ? "10% bundling discount applied"
+                              : "No bundling discount"}
 
                           </p>
 
@@ -429,31 +508,100 @@ function App() {
                       </div>
 
 
-                      {/* REMOVE */}
+                      {/* ITEM CONTROLS */}
 
-                      {index > 0 && (
+                      <div className="flex items-center gap-3">
 
-                        <button
-                          onClick={() =>
-                            removeItem(index)
-                          }
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-xl text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
-                          title="Remove item"
-                        >
+                        {/* =================================================
+                            BUNDLING TOGGLE
+                        ================================================= */}
 
-                          ×
+                        {index > 0 && (
 
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateItem(
+                                index,
+                                "bundling",
+                                !item.bundling
+                              )
+                            }
+                            className="group flex items-center gap-3"
+                            aria-label="Toggle bundling discount"
+                          >
 
-                      )}
+                            {/* LABEL */}
+
+                            <span
+                              className={`text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                                item.bundling
+                                  ? "text-amber-400"
+                                  : "text-slate-500"
+                              }`}
+                            >
+
+                              {item.bundling
+                                ? "BUNDLING"
+                                : "NO DISCOUNT"}
+
+                            </span>
+
+
+                            {/* SWITCH */}
+
+                            <div
+                              className={`relative h-7 w-12 rounded-full p-1 transition-all duration-200 ${
+                                item.bundling
+                                  ? "bg-amber-500 shadow-lg shadow-amber-500/20"
+                                  : "bg-slate-700"
+                              }`}
+                            >
+
+                              <div
+                                className={`h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                                  item.bundling
+                                    ? "translate-x-5"
+                                    : "translate-x-0"
+                                }`}
+                              />
+
+                            </div>
+
+                          </button>
+
+                        )}
+
+
+                        {/* REMOVE BUTTON */}
+
+                        {index > 0 && (
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removeItem(index)
+                            }
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-xl leading-none text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
+                            title="Remove item"
+                          >
+
+                            ×
+
+                          </button>
+
+                        )}
+
+                      </div>
 
                     </div>
 
 
-                    {/* ITEM FORM */}
+                    {/* ========================================
+                        FORM
+                    ======================================== */}
 
                     <div className="space-y-5 p-6">
-
 
                       {/* CALCULATOR */}
 
@@ -466,24 +614,26 @@ function App() {
 
                         <select
                           value={item.calculatorId}
-                          onChange={(e) =>
+                          onChange={(event) =>
                             changeCalculator(
                               index,
-                              e.target.value
+                              event.target.value
                             )
                           }
                           className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-indigo-500"
                         >
 
                           {calculators.map(
-                            (calculator) => (
+                            (calculatorOption) => (
 
                               <option
-                                key={calculator.id}
-                                value={calculator.id}
+                                key={calculatorOption.id}
+                                value={
+                                  calculatorOption.id
+                                }
                               >
 
-                                {calculator.title}
+                                {calculatorOption.title}
 
                               </option>
 
@@ -499,7 +649,6 @@ function App() {
 
                       <div className="grid gap-4 md:grid-cols-3">
 
-
                         {/* CLASS */}
 
                         <div>
@@ -511,14 +660,14 @@ function App() {
 
                           <select
                             value={item.className}
-                            onChange={(e) =>
+                            onChange={(event) =>
                               updateItem(
                                 index,
                                 "className",
-                                e.target.value
+                                event.target.value
                               )
                             }
-                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none focus:border-indigo-500"
+                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-indigo-500"
                           >
 
                             {availableClasses.map(
@@ -552,14 +701,14 @@ function App() {
 
                           <select
                             value={item.priceType}
-                            onChange={(e) =>
+                            onChange={(event) =>
                               updateItem(
                                 index,
                                 "priceType",
-                                e.target.value
+                                event.target.value
                               )
                             }
-                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none focus:border-violet-500"
+                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-violet-500"
                           >
 
                             {priceTypes.map(
@@ -593,14 +742,14 @@ function App() {
 
                           <select
                             value={item.packageName}
-                            onChange={(e) =>
+                            onChange={(event) =>
                               updateItem(
                                 index,
                                 "packageName",
-                                e.target.value
+                                event.target.value
                               )
                             }
-                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none focus:border-emerald-500"
+                            className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-500"
                           >
 
                             {packages.map(
@@ -625,12 +774,15 @@ function App() {
                       </div>
 
 
-                      {/* PRICE RESULT */}
+                      {/* ========================================
+                          PRICE RESULT
+                      ======================================== */}
 
                       <div className="rounded-xl border border-white/10 bg-black/20 p-4">
 
+                        {/* NORMAL PRICE */}
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-4">
 
                           <span className="text-sm text-slate-400">
 
@@ -654,42 +806,45 @@ function App() {
 
                         {/* BUNDLING DISCOUNT */}
 
-                        {index > 0 && (
+                        {index > 0 &&
+                          item.bundling && (
 
-                          <>
+                            <>
 
-                            <div className="my-3 h-px bg-white/10" />
-
-
-                            <div className="flex items-center justify-between">
-
-                              <span className="text-sm text-amber-400">
-
-                                Bundling Discount 10%
-
-                              </span>
+                              <div className="my-3 h-px bg-white/10" />
 
 
-                              <span className="text-sm font-semibold text-amber-400">
+                              <div className="flex items-center justify-between gap-4">
 
-                                -{" "}
-                                {formatRupiah(
-                                  result.discount
-                                )}
+                                <span className="text-sm text-amber-400">
 
-                              </span>
+                                  Bundling Discount 10%
 
-                            </div>
+                                </span>
 
-                          </>
 
-                        )}
+                                <span className="text-sm font-semibold text-amber-400">
+
+                                  -{" "}
+                                  {formatRupiah(
+                                    result.discount
+                                  )}
+
+                                </span>
+
+                              </div>
+
+                            </>
+
+                          )}
 
 
                         <div className="my-3 h-px bg-white/10" />
 
 
-                        <div className="flex items-center justify-between">
+                        {/* FINAL */}
+
+                        <div className="flex items-center justify-between gap-4">
 
                           <span className="text-sm font-semibold text-slate-300">
 
@@ -702,7 +857,9 @@ function App() {
                             className={`text-lg font-bold ${
                               index === 0
                                 ? "text-indigo-300"
-                                : "text-amber-300"
+                                : item.bundling
+                                ? "text-amber-300"
+                                : "text-white"
                             }`}
                           >
 
@@ -721,13 +878,15 @@ function App() {
                   </div>
 
                 );
-
               })}
 
 
-              {/* ADD BUNDLING ITEM */}
+              {/* =================================================
+                  ADD BUNDLING ITEM
+              ================================================= */}
 
               <button
+                type="button"
                 onClick={addBundlingItem}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-indigo-500/30 bg-indigo-500/[0.03] px-6 py-5 text-sm font-semibold text-indigo-300 transition hover:border-indigo-500/60 hover:bg-indigo-500/[0.08]"
               >
@@ -744,14 +903,12 @@ function App() {
 
 
             {/* =================================================
-                SUMMARY
+                RIGHT SUMMARY
             ================================================= */}
 
             <div className="lg:sticky lg:top-6 lg:self-start">
 
-
               <div className="overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-b from-indigo-500/10 to-white/[0.03]">
-
 
                 {/* SUMMARY HEADER */}
 
@@ -762,9 +919,7 @@ function App() {
                     <div>
 
                       <p className="text-xs font-medium uppercase tracking-wider text-indigo-300">
-
                         Estimated Total
-
                       </p>
 
 
@@ -782,9 +937,7 @@ function App() {
 
 
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-lg text-indigo-400">
-
                       $
-
                     </div>
 
                   </div>
@@ -799,17 +952,16 @@ function App() {
                 </div>
 
 
-                {/* SUMMARY */}
+                {/* SUMMARY BODY */}
 
                 <div className="p-6">
 
-
                   <p className="mb-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
-
                     Package Summary
-
                   </p>
 
+
+                  {/* ITEMS */}
 
                   <div className="space-y-4">
 
@@ -836,18 +988,37 @@ function App() {
 
                           <div className="flex items-start justify-between gap-3">
 
+                            {/* INFO */}
+
                             <div className="min-w-0">
 
-                              <p className="text-sm font-semibold text-white">
+                              <div className="flex items-center gap-2">
 
-                                Item {index + 1}
+                                <p className="text-sm font-semibold text-white">
 
-                              </p>
+                                  Item {index + 1}
+
+                                </p>
+
+
+                                {index > 0 &&
+                                  item.bundling && (
+
+                                    <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-400">
+
+                                      -10%
+
+                                    </span>
+
+                                  )}
+
+                              </div>
 
 
                               <p className="mt-1 truncate text-xs text-slate-500">
 
-                                {calculator.title}
+                                {calculator?.title ||
+                                  item.calculatorId}
 
                               </p>
 
@@ -863,7 +1034,9 @@ function App() {
                             </div>
 
 
-                            <div className="text-right">
+                            {/* PRICE */}
+
+                            <div className="shrink-0 text-right">
 
                               <p className="text-sm font-semibold text-white">
 
@@ -874,15 +1047,16 @@ function App() {
                               </p>
 
 
-                              {index > 0 && (
+                              {index > 0 &&
+                                item.bundling && (
 
-                                <p className="mt-1 text-[10px] text-amber-400">
+                                  <p className="mt-1 text-[10px] text-amber-400">
 
-                                  -10% bundling
+                                    Bundling
 
-                                </p>
+                                  </p>
 
-                              )}
+                                )}
 
                             </div>
 
@@ -903,12 +1077,10 @@ function App() {
 
                     <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-3">
 
                         <span className="text-xs text-amber-400">
-
                           Total Bundling Savings
-
                         </span>
 
 
@@ -922,24 +1094,31 @@ function App() {
 
                       </div>
 
+
+                      <p className="mt-1 text-[10px] text-amber-400/60">
+
+                        {bundlingCount}{" "}
+                        {bundlingCount === 1
+                          ? "item"
+                          : "items"}{" "}
+                        receiving 10% discount
+
+                      </p>
+
                     </div>
 
                   )}
 
 
-                  {/* DIVIDER */}
+                  {/* TOTAL */}
 
                   <div className="my-6 h-px bg-white/10" />
 
 
-                  {/* FINAL TOTAL */}
-
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
 
                     <span className="text-sm font-semibold text-slate-300">
-
                       Final Total
-
                     </span>
 
 
@@ -954,9 +1133,7 @@ function App() {
                   </div>
 
 
-                  {/* =================================================
-                      PAYMENT BUTTON
-                  ================================================= */}
+                  {/* PAYMENT */}
 
                   <a
                     href={PAYMENT_URL}
@@ -977,6 +1154,7 @@ function App() {
                   {/* RESET */}
 
                   <button
+                    type="button"
                     onClick={resetCalculator}
                     className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white"
                   >
@@ -1003,7 +1181,7 @@ function App() {
             <div className="flex flex-col justify-between gap-2 text-xs text-slate-600 sm:flex-row">
 
               <span>
-                Price Calculator · Internal Sales Tool
+                made with ❤️ by KEVIN SURYA
               </span>
 
               <span>

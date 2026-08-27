@@ -1185,7 +1185,7 @@ function App() {
               </span>
 
               <span>
-                Price data · 15 August 2026
+                Price data · 28 Agustus 2026
               </span>
 
             </div>

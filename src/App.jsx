@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import {
   pricingData,
   priceTypes,
@@ -60,9 +61,66 @@ function createItem() {
     priceType: priceTypes?.[0]?.id || "normal",
     packageName: packages?.[0] || "10L",
 
-    // Item baru otomatis mendapat bundling 10%
+    // Item tambahan otomatis mendapat bundling 10%
     bundling: true,
   };
+}
+
+// ============================================================
+// ADSTERra BANNER
+// ============================================================
+
+function AdBanner() {
+  const adRef = useRef(null);
+
+  useEffect(() => {
+    if (!adRef.current) return;
+
+    // Bersihkan container
+    adRef.current.innerHTML = "";
+
+    // Konfigurasi Adsterra
+    window.atOptions = {
+      key: "c11f8555adf924fecf124800dfa61e58",
+      format: "iframe",
+      height: 250,
+      width: 300,
+      params: {},
+    };
+
+    // Load script
+    const script = document.createElement("script");
+
+    script.src =
+      "https://bauval.org/22/c11f8555adf924fecf124800dfa61e58";
+
+    script.async = true;
+
+    adRef.current.appendChild(script);
+
+    return () => {
+      if (adRef.current) {
+        adRef.current.innerHTML = "";
+      }
+    };
+  }, []);
+
+  return (
+    <div className="flex w-full justify-center">
+      <div className="w-full max-w-[300px]">
+
+        <div className="mb-2 text-center text-[9px] font-medium uppercase tracking-[0.2em] text-slate-600">
+          Advertisement
+        </div>
+
+        <div
+          ref={adRef}
+          className="flex h-[250px] w-[300px] max-w-full items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-white/[0.02]"
+        />
+
+      </div>
+    </div>
+  );
 }
 
 // ============================================================
@@ -70,6 +128,7 @@ function createItem() {
 // ============================================================
 
 function App() {
+
   // ==========================================================
   // ITEMS
   // ==========================================================
@@ -78,7 +137,7 @@ function App() {
     {
       ...createItem(),
 
-      // Item pertama tidak mendapatkan bundling
+      // Item pertama tidak mendapat bundling
       bundling: false,
     },
   ]);
@@ -89,6 +148,7 @@ function App() {
 
   const updateItem = (index, field, value) => {
     setItems((currentItems) => {
+
       const newItems = [...currentItems];
 
       newItems[index] = {
@@ -105,6 +165,7 @@ function App() {
   // ==========================================================
 
   const changeCalculator = (index, calculatorId) => {
+
     const calculator = pricingData[calculatorId];
 
     if (!calculator) {
@@ -114,6 +175,7 @@ function App() {
     const firstClass = getFirstClass(calculator);
 
     setItems((currentItems) => {
+
       const newItems = [...currentItems];
 
       newItems[index] = {
@@ -133,10 +195,12 @@ function App() {
   // ==========================================================
 
   const addBundlingItem = () => {
+
     setItems((currentItems) => [
       ...currentItems,
       createItem(),
     ]);
+
   };
 
   // ==========================================================
@@ -144,6 +208,8 @@ function App() {
   // ==========================================================
 
   const removeItem = (index) => {
+
+    // Item pertama tidak boleh dihapus
     if (index === 0) {
       return;
     }
@@ -160,12 +226,14 @@ function App() {
   // ==========================================================
 
   const resetCalculator = () => {
+
     setItems([
       {
         ...createItem(),
         bundling: false,
       },
     ]);
+
   };
 
   // ==========================================================
@@ -173,7 +241,9 @@ function App() {
   // ==========================================================
 
   const getItemPrice = (item, index) => {
-    const calculator = pricingData[item.calculatorId];
+
+    const calculator =
+      pricingData[item.calculatorId];
 
     const price =
       calculator?.classes?.[item.className]?.[
@@ -185,11 +255,13 @@ function App() {
     // --------------------------------------------------------
 
     if (index === 0) {
+
       return {
         basePrice: price,
         discount: 0,
         finalPrice: price,
       };
+
     }
 
     // --------------------------------------------------------
@@ -197,14 +269,18 @@ function App() {
     // --------------------------------------------------------
 
     if (item.bundling === true) {
+
       const discount = price * 0.1;
-      const finalPrice = price - discount;
+
+      const finalPrice =
+        price - discount;
 
       return {
         basePrice: price,
         discount,
         finalPrice,
       };
+
     }
 
     // --------------------------------------------------------
@@ -216,6 +292,7 @@ function App() {
       discount: 0,
       finalPrice: price,
     };
+
   };
 
   // ==========================================================
@@ -224,9 +301,12 @@ function App() {
 
   const totalPrice = items.reduce(
     (total, item, index) => {
-      const result = getItemPrice(item, index);
+
+      const result =
+        getItemPrice(item, index);
 
       return total + result.finalPrice;
+
     },
     0
   );
@@ -237,9 +317,12 @@ function App() {
 
   const totalDiscount = items.reduce(
     (total, item, index) => {
-      const result = getItemPrice(item, index);
+
+      const result =
+        getItemPrice(item, index);
 
       return total + result.discount;
+
     },
     0
   );
@@ -248,16 +331,19 @@ function App() {
   // BUNDLING COUNT
   // ==========================================================
 
-  const bundlingCount = items.filter(
-    (item, index) =>
-      index > 0 && item.bundling === true
-  ).length;
+  const bundlingCount =
+    items.filter(
+      (item, index) =>
+        index > 0 &&
+        item.bundling === true
+    ).length;
 
   // ==========================================================
   // RENDER
   // ==========================================================
 
   return (
+
     <div className="min-h-screen bg-slate-950 text-white">
 
       {/* ======================================================
@@ -271,7 +357,6 @@ function App() {
         <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-violet-600/10 blur-3xl" />
 
       </div>
-
 
       <div className="relative">
 
@@ -305,7 +390,6 @@ function App() {
 
             </div>
 
-
             {/* RIGHT */}
 
             <div className="flex items-center gap-3">
@@ -317,7 +401,6 @@ function App() {
               <div className="hidden rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-300 sm:block">
                 v1.0
               </div>
-
 
               {/* TEAM PHOTO */}
 
@@ -333,7 +416,6 @@ function App() {
 
                 </div>
 
-
                 <div className="pointer-events-none absolute right-0 top-[4.5rem] z-50 whitespace-nowrap rounded-lg border border-white/10 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-300 opacity-0 shadow-xl transition-opacity duration-200 group-hover:opacity-100">
                   Our Team
                 </div>
@@ -345,7 +427,6 @@ function App() {
           </div>
 
         </header>
-
 
         {/* ====================================================
             MAIN
@@ -367,7 +448,6 @@ function App() {
 
             </div>
 
-
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
 
               Calculate your{" "}
@@ -378,7 +458,6 @@ function App() {
 
             </h2>
 
-
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
 
               Add multiple courses and individually control
@@ -388,7 +467,6 @@ function App() {
             </p>
 
           </section>
-
 
           {/* ==================================================
               CONTENT
@@ -418,7 +496,6 @@ function App() {
 
                 const result =
                   getItemPrice(item, index);
-
 
                 return (
 
@@ -460,7 +537,6 @@ function App() {
 
                         </div>
 
-
                         <div>
 
                           <div className="flex flex-wrap items-center gap-2">
@@ -468,7 +544,6 @@ function App() {
                             <h3 className="font-semibold">
                               Item {index + 1}
                             </h3>
-
 
                             {index === 0 ? (
 
@@ -492,7 +567,6 @@ function App() {
 
                           </div>
 
-
                           <p className="mt-1 text-xs text-slate-500">
 
                             {index === 0
@@ -507,14 +581,11 @@ function App() {
 
                       </div>
 
-
                       {/* ITEM CONTROLS */}
 
                       <div className="flex items-center gap-3">
 
-                        {/* =================================================
-                            BUNDLING TOGGLE
-                        ================================================= */}
+                        {/* BUNDLING TOGGLE */}
 
                         {index > 0 && (
 
@@ -531,8 +602,6 @@ function App() {
                             aria-label="Toggle bundling discount"
                           >
 
-                            {/* LABEL */}
-
                             <span
                               className={`text-[10px] font-bold uppercase tracking-wide transition-colors ${
                                 item.bundling
@@ -546,9 +615,6 @@ function App() {
                                 : "NO DISCOUNT"}
 
                             </span>
-
-
-                            {/* SWITCH */}
 
                             <div
                               className={`relative h-7 w-12 rounded-full p-1 transition-all duration-200 ${
@@ -572,8 +638,7 @@ function App() {
 
                         )}
 
-
-                        {/* REMOVE BUTTON */}
+                        {/* REMOVE */}
 
                         {index > 0 && (
 
@@ -585,9 +650,7 @@ function App() {
                             className="flex h-8 w-8 items-center justify-center rounded-lg text-xl leading-none text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
                             title="Remove item"
                           >
-
                             ×
-
                           </button>
 
                         )}
@@ -595,7 +658,6 @@ function App() {
                       </div>
 
                     </div>
-
 
                     {/* ========================================
                         FORM
@@ -610,7 +672,6 @@ function App() {
                         <label className="mb-2 block text-xs font-medium text-slate-400">
                           Calculator
                         </label>
-
 
                         <select
                           value={item.calculatorId}
@@ -628,13 +689,9 @@ function App() {
 
                               <option
                                 key={calculatorOption.id}
-                                value={
-                                  calculatorOption.id
-                                }
+                                value={calculatorOption.id}
                               >
-
                                 {calculatorOption.title}
-
                               </option>
 
                             )
@@ -643,7 +700,6 @@ function App() {
                         </select>
 
                       </div>
-
 
                       {/* CLASS / PRICE / PACKAGE */}
 
@@ -656,7 +712,6 @@ function App() {
                           <label className="mb-2 block text-xs font-medium text-slate-400">
                             Class Type
                           </label>
-
 
                           <select
                             value={item.className}
@@ -677,9 +732,7 @@ function App() {
                                   key={className}
                                   value={className}
                                 >
-
                                   {className}
-
                                 </option>
 
                               )
@@ -689,7 +742,6 @@ function App() {
 
                         </div>
 
-
                         {/* PRICE TYPE */}
 
                         <div>
@@ -697,7 +749,6 @@ function App() {
                           <label className="mb-2 block text-xs font-medium text-slate-400">
                             Price Type
                           </label>
-
 
                           <select
                             value={item.priceType}
@@ -718,9 +769,7 @@ function App() {
                                   key={priceType.id}
                                   value={priceType.id}
                                 >
-
                                   {priceType.name}
-
                                 </option>
 
                               )
@@ -730,7 +779,6 @@ function App() {
 
                         </div>
 
-
                         {/* PACKAGE */}
 
                         <div>
@@ -738,7 +786,6 @@ function App() {
                           <label className="mb-2 block text-xs font-medium text-slate-400">
                             Package
                           </label>
-
 
                           <select
                             value={item.packageName}
@@ -759,9 +806,7 @@ function App() {
                                   key={packageName}
                                   value={packageName}
                                 >
-
                                   {packageName}
-
                                 </option>
 
                               )
@@ -773,14 +818,11 @@ function App() {
 
                       </div>
 
-
                       {/* ========================================
                           PRICE RESULT
                       ======================================== */}
 
                       <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-
-                        {/* NORMAL PRICE */}
 
                         <div className="flex items-center justify-between gap-4">
 
@@ -792,7 +834,6 @@ function App() {
 
                           </span>
 
-
                           <span className="text-sm font-semibold text-white">
 
                             {formatRupiah(
@@ -803,9 +844,6 @@ function App() {
 
                         </div>
 
-
-                        {/* BUNDLING DISCOUNT */}
-
                         {index > 0 &&
                           item.bundling && (
 
@@ -813,19 +851,16 @@ function App() {
 
                               <div className="my-3 h-px bg-white/10" />
 
-
                               <div className="flex items-center justify-between gap-4">
 
                                 <span className="text-sm text-amber-400">
-
                                   Bundling Discount 10%
-
                                 </span>
-
 
                                 <span className="text-sm font-semibold text-amber-400">
 
                                   -{" "}
+
                                   {formatRupiah(
                                     result.discount
                                   )}
@@ -838,20 +873,13 @@ function App() {
 
                           )}
 
-
                         <div className="my-3 h-px bg-white/10" />
-
-
-                        {/* FINAL */}
 
                         <div className="flex items-center justify-between gap-4">
 
                           <span className="text-sm font-semibold text-slate-300">
-
                             Final Price
-
                           </span>
-
 
                           <span
                             className={`text-lg font-bold ${
@@ -880,9 +908,8 @@ function App() {
                 );
               })}
 
-
               {/* =================================================
-                  ADD BUNDLING ITEM
+                  ADD BUNDLING
               ================================================= */}
 
               <button
@@ -901,12 +928,15 @@ function App() {
 
             </div>
 
-
             {/* =================================================
-                RIGHT SUMMARY
+                RIGHT SIDE
             ================================================= */}
 
             <div className="lg:sticky lg:top-6 lg:self-start">
+
+              {/* =================================================
+                  SUMMARY — PALING ATAS
+              ================================================= */}
 
               <div className="overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-b from-indigo-500/10 to-white/[0.03]">
 
@@ -922,26 +952,25 @@ function App() {
                         Estimated Total
                       </p>
 
-
                       <p className="mt-1 text-xs text-slate-500">
 
                         {items.length}{" "}
+
                         {items.length === 1
                           ? "item"
                           : "items"}{" "}
+
                         in package
 
                       </p>
 
                     </div>
 
-
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-lg text-indigo-400">
                       $
                     </div>
 
                   </div>
-
 
                   <div className="mt-6 text-4xl font-bold tracking-tight">
 
@@ -951,7 +980,6 @@ function App() {
 
                 </div>
 
-
                 {/* SUMMARY BODY */}
 
                 <div className="p-6">
@@ -959,7 +987,6 @@ function App() {
                   <p className="mb-5 text-xs font-semibold uppercase tracking-wider text-slate-500">
                     Package Summary
                   </p>
-
 
                   {/* ITEMS */}
 
@@ -978,7 +1005,6 @@ function App() {
                           index
                         );
 
-
                       return (
 
                         <div
@@ -988,32 +1014,24 @@ function App() {
 
                           <div className="flex items-start justify-between gap-3">
 
-                            {/* INFO */}
-
                             <div className="min-w-0">
 
                               <div className="flex items-center gap-2">
 
                                 <p className="text-sm font-semibold text-white">
-
                                   Item {index + 1}
-
                                 </p>
-
 
                                 {index > 0 &&
                                   item.bundling && (
 
                                     <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-400">
-
                                       -10%
-
                                     </span>
 
                                   )}
 
                               </div>
-
 
                               <p className="mt-1 truncate text-xs text-slate-500">
 
@@ -1021,7 +1039,6 @@ function App() {
                                   item.calculatorId}
 
                               </p>
-
 
                               <p className="mt-1 text-xs text-slate-500">
 
@@ -1033,9 +1050,6 @@ function App() {
 
                             </div>
 
-
-                            {/* PRICE */}
-
                             <div className="shrink-0 text-right">
 
                               <p className="text-sm font-semibold text-white">
@@ -1046,14 +1060,11 @@ function App() {
 
                               </p>
 
-
                               {index > 0 &&
                                 item.bundling && (
 
                                   <p className="mt-1 text-[10px] text-amber-400">
-
                                     Bundling
-
                                   </p>
 
                                 )}
@@ -1070,7 +1081,6 @@ function App() {
 
                   </div>
 
-
                   {/* TOTAL SAVINGS */}
 
                   {totalDiscount > 0 && (
@@ -1083,7 +1093,6 @@ function App() {
                           Total Bundling Savings
                         </span>
 
-
                         <span className="text-sm font-bold text-amber-400">
 
                           {formatRupiah(
@@ -1094,13 +1103,14 @@ function App() {
 
                       </div>
 
-
                       <p className="mt-1 text-[10px] text-amber-400/60">
 
                         {bundlingCount}{" "}
+
                         {bundlingCount === 1
                           ? "item"
                           : "items"}{" "}
+
                         receiving 10% discount
 
                       </p>
@@ -1109,18 +1119,15 @@ function App() {
 
                   )}
 
-
                   {/* TOTAL */}
 
                   <div className="my-6 h-px bg-white/10" />
-
 
                   <div className="flex items-center justify-between gap-3">
 
                     <span className="text-sm font-semibold text-slate-300">
                       Final Total
                     </span>
-
 
                     <span className="text-xl font-bold text-white">
 
@@ -1131,7 +1138,6 @@ function App() {
                     </span>
 
                   </div>
-
 
                   {/* PAYMENT */}
 
@@ -1150,7 +1156,6 @@ function App() {
 
                   </a>
 
-
                   {/* RESET */}
 
                   <button
@@ -1158,19 +1163,26 @@ function App() {
                     onClick={resetCalculator}
                     className="mt-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-slate-300 transition hover:bg-white/[0.07] hover:text-white"
                   >
-
                     Reset Package
-
                   </button>
 
                 </div>
 
               </div>
 
+              {/* =================================================
+                  ADVERTISEMENT
+              ================================================= */}
+
+              <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+
+                <AdBanner />
+
+              </div>
+
             </div>
 
           </div>
-
 
           {/* =================================================
               FOOTER
